@@ -633,7 +633,7 @@ specifying complex expressions.
 
 sumLast2 :: Int -> Int
 sumLast2 n = div last2 10 + mod last2 10
-    where last2 = (abs n) `mod` 100
+    where last2 = abs n `mod` 100
     
 
 {- |
