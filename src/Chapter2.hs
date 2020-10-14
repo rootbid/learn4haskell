@@ -649,7 +649,9 @@ takeEven :: [a] -> [a]
 --     go [] = []
 --     go (x:xs) = x : go (drop 1 xs)
 takeEven [] = []
-takeEven (x:xs) = x : takeEven (drop 1 xs)
+-- takeEven (x:xs) = x : takeEven (drop 1 xs)
+takeEven (x:[]) = x : []
+takeEven (x:y:xs) = x : takeEven xs
 
 
 {- |
@@ -757,8 +759,7 @@ value of the element itself
 🕯 HINT: Use combination of 'map' and 'replicate'
 -}
 smartReplicate :: [Int] -> [Int]
-smartReplicate [] = []
-smartReplicate l = concat (map (\a -> replicate a a) l)
+smartReplicate = concatMap (\a -> replicate a a)
 
 {- |
 =⚔️= Task 9
@@ -777,7 +778,7 @@ contains :: Int -> [[Int]] -> [[Int]]
 --     go :: Int -> [Int] -> [Int]
 --     go a l = 
 --       if a `elem` l then l else []
-contains a xs = filter (elem a) xs
+contains = filter . elem
 
 {- |
 =🛡= Eta-reduction
@@ -880,8 +881,10 @@ list.
 -}
 rotate :: Int -> [Int] -> [Int]
 rotate _ [] = []
-rotate a x = drop a (take g (cycle x))
-  where g = length x + a
+rotate a x = 
+  if a < 0 then [] else 
+    drop a (take g (cycle x))
+      where g = length x + a
 
 {- |
 =💣= Task 12*
@@ -898,8 +901,11 @@ and reverses it.
   cheating!
 -}
 rewind :: [a] -> [a]
-rewind [] = []
-rewind x = last x : rewind (init x)
+rewind x = go [] x
+  where
+    go :: [a] -> [a] -> [a]
+    go l [] = l
+    go l (x:xs) = go (x:l) xs
 
 
 {-
