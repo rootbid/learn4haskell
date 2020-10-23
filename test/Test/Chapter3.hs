@@ -29,9 +29,10 @@ chapter3normal = describe "Chapter3Normal" $ do
         it "daysToParty - 1" $ daysToParty Sunday `shouldBe` 5
     
     describe "Task9: Final task" $ do
-        it "knight vs monster-match1" $ battle kk mm `shouldBe` "Monster is Victorious!"
-        it "knight vs monster-match2" $ battle kk' mm' `shouldBe` "Knight is Victorious!"
-        it "knight vs monster-match3" $ battle kk'' mm'' `shouldBe` "Knight is Victorious!"
+        it "knight vs monster-match1" $ battle kk mm `shouldBe` "Monster wins"
+        it "knight vs monster-match2" $ battle kk' mm' `shouldBe` "Knight wins"
+        it "knight vs monster-match3" $ battle kk'' mm'' `shouldBe` "Knight wins"
+        it "knight vs monster-match4" $ battle kk''' mm''' `shouldBe` "Monster wins"
 
 testCity1 :: City
 testCity1 = City
@@ -126,5 +127,20 @@ mm'' :: Monster'
 mm'' = M
     { mHealth = Health 25
     , mAttack = Attack 20
+    , mActions = MAttack
+    }
+
+kk''' :: Knight'
+kk''' = K
+    { kHealth = Health 45
+    , kAttack = Attack 15
+    , kDefense = Defense 5
+    , kActions = KAttack
+    }
+
+mm''':: Monster'
+mm''' = M
+    { mHealth = Health 50
+    , mAttack = Attack 40
     , mActions = MAttack
     }

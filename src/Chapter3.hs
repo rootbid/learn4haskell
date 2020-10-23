@@ -662,13 +662,13 @@ introducing extra newtypes.
 🕯 HINT: if you complete this task properly, you don't need to change the
     implementation of the "hitPlayer" function at all!
 -}
-newtype Health = Health Int deriving (Ord, Eq)
+newtype Health = Health Int deriving (Show, Ord, Eq)
 newtype Armor = Armor Int
-newtype Attack = Attack Int deriving (Ord, Eq)
+newtype Attack = Attack Int deriving (Show, Ord, Eq)
 newtype Dexterity = Dexterity Int
 newtype Strength = Strength Int
 newtype Damage = Damage Int
-newtype Defense = Defense Int
+newtype Defense = Defense Int deriving Show
 
 data Player = Player
     { playerHealth    :: Health
@@ -1168,7 +1168,7 @@ data Monster' = M
     { mHealth  :: Health
     , mAttack  :: Attack
     , mActions :: MonsterActions
-    }
+    } deriving Show
 
 data KnightActions 
     = KAttack
@@ -1181,7 +1181,7 @@ data Knight' = K
     , kAttack  :: Attack
     , kDefense :: Defense
     , kActions :: KnightActions
-    }
+    } deriving Show
 
 cycleMActions :: MonsterActions -> MonsterActions
 cycleMActions a
@@ -1199,6 +1199,14 @@ getMonsterDamage (Health h) (Attack a) = Health (h - a)
 getKnightDamange :: Health -> Defense -> Attack -> Health
 getKnightDamange (Health h) (Defense d) (Attack a) = Health ((h + d) - a)
 
+skipKAttack :: KnightActions -> Attack -> Attack
+skipKAttack KAttack a = a
+skipKAttack _ _ = Attack 0
+    
+skipMAttack :: MonsterActions -> Attack -> Attack
+skipMAttack MAttack a = a
+skipMAttack _ _ = Attack 0
+
 class Battle a b where {
     battle :: a -> b -> String
 }
@@ -1207,37 +1215,25 @@ instance Battle Knight' Monster' where
     battle :: Knight' -> Monster' -> String
     battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
         | pk == KAttack && pm == MAttack   = fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
-        | pk == KAttack && pm == Run       = fight' (K (Health hk) ak (Defense dk) pk) (M hm (Attack 0) pm)
-        | pk == Heal && pm == MAttack      = fight' (K (Health (hk+10)) (Attack 0) (Defense dk) pk) (M hm am pm)
-        | pk == Heal && pm == Run          = fight' (K (Health (hk+10)) (Attack 0) (Defense dk) pk) (M hm (Attack 0) pm)
-        | pk == SpellCast && pm == MAttack = fight' (K (Health hk) (Attack 0) (Defense (dk+10)) pk) (M hm am pm)
-        | pk == SpellCast && pm == Run     = fight' (K (Health hk) (Attack 0) (Defense (dk+10)) pk) (M hm (Attack 0) pm)
+        | pk == KAttack && pm == Run       = fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+        | pk == Heal && pm == MAttack      = fight' (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+        | pk == Heal && pm == Run          = fight' (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+        | pk == SpellCast && pm == MAttack = fight' (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
+        | pk == SpellCast && pm == Run     = fight' (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
         where
+            fight' :: Knight' -> Monster' -> String
             fight' (K kH kA kD kP) (M mH mA mP) =
-                if (getMonsterDamage mH kA > Health 0) then
-                    if (getKnightDamange kH kD mA > Health 0) then do
-                        let knight' = K (getKnightDamange kH kD mA) kA kD (cycleKActions kP)
-                        let monster' = M (getMonsterDamage mH kA) mA (cycleMActions mP)
+                if (getMonsterDamage mH (skipKAttack kP kA) > Health 0) then
+                    if (getKnightDamange kH kD (skipMAttack mP mA) > Health 0) then do
+                        let newKHealth = getKnightDamange kH kD mA
+                        let newMHealth = getMonsterDamage mH kA
+                        let knight' = K newKHealth kA kD (cycleKActions kP)
+                        let monster' = M newMHealth mA (cycleMActions mP)
                         battle knight' monster'
                     else
-                        "Monster is Victorious!"
+                        "Monster wins"
                 else
-                    "Knight is Victorious!"
-
-kk'' :: Knight'
-kk'' = K
-    { kHealth = Health 45
-    , kAttack = Attack 15
-    , kDefense = Defense 5
-    , kActions = KAttack
-    }
-
-mm'' :: Monster'
-mm'' = M
-    { mHealth = Health 25
-    , mAttack = Attack 20
-    , mActions = MAttack
-    }
+                    "Knight wins"
 
 {-
 You did it! Now it is time to open pull request with your changes
