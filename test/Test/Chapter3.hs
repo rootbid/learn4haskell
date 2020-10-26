@@ -14,6 +14,9 @@ chapter3 = describe "Chapter3" $ do
 
 chapter3normal :: Spec
 chapter3normal = describe "Chapter3Normal" $ do
+    describe "Task2: Datatypes intro" $ do
+        it "Monster vs Knight - 1" $ fight mon kni `shouldBe` 15
+
     describe "Task4: ADTs" $ do
         it "build castle" $ buildCastle testCity1 `shouldBe` testBuildCastle
         it "build house" $ buildHouse testHouses testCity1 `shouldBe` testBuildHouses
@@ -29,61 +32,69 @@ chapter3normal = describe "Chapter3Normal" $ do
         it "daysToParty - 1" $ daysToParty Sunday `shouldBe` 5
     
     describe "Task9: Final task" $ do
-        it "knight vs monster-match1" $ battle kk mm `shouldBe` "Monster wins"
-        it "knight vs monster-match2" $ battle kk' mm' `shouldBe` "Knight wins"
-        it "knight vs monster-match3" $ battle kk'' mm'' `shouldBe` "Knight wins"
-        it "knight vs monster-match4" $ battle kk''' mm''' `shouldBe` "Monster wins"
+        it "knight vs monster-match1" $ fight kk mm `shouldBe` "Monster wins"
+        it "knight vs monster-match2" $ fight kk' mm' `shouldBe` "Knight wins"
+        it "knight vs monster-match3" $ fight kk'' mm'' `shouldBe` "Knight wins"
+        it "knight vs monster-match4" $ fight kk''' mm''' `shouldBe` "Monster wins"
+
+mon :: Monster
+mon = Monster
+    { monsterHealth = 20
+    , monsterAttack = 2
+    , monsterGold   = 20
+    }
+
+kni :: Knight
+kni = Knight
+    { knightHealth = 25
+    , knightAttack = 2
+    , knightGold   = 15
+    }
 
 testCity1 :: City
 testCity1 = City
     { castle    = Nothing
-    , wall      = Wall False
     , community = Library
-    , housing   = Housing 0 2 3 5
+    , housing   = [Two, Two, Three, Three, Four, Four, Four, Four]
     }
 
 testBuildCastle :: City
 testBuildCastle = City
-    { castle    = Just (Castle "NewCastle")
-    , wall      = Wall False
+    { castle    = Just (Castle "NewCastle" False)
     , community = Library
-    , housing   = Housing 0 2 3 5
+    , housing   = [Two, Two, Three, Three, Four, Four, Four, Four]
     }
 
 testBuildHouses :: City
 testBuildHouses = City
     { castle    = Nothing
-    , wall      = Wall False
     , community = Library
-    , housing   = Housing 5 5 3 5
+    , housing   = [Two,Two,Three,Three,Four,Four,Four,Four,Two,Two,Two,Three,Three,Three,Three,Three,Four,Four,Four,Four,Four]
     }
 
 testCity2 :: City
 testCity2 = City
-    { castle    = Just (Castle "SmallCastle")
-    , wall      = Wall False
+    { castle    = Just (Castle "SmallCastle" False)
     , community = Library
-    , housing   = Housing 0 2 3 5
+    , housing   = [Two, Two, Two, Three, Three, Three, Four, Four, Four, Four]
     }
 
 testBuildWalls :: City
 testBuildWalls = City
-    { castle    = Just (Castle "SmallCastle")
-    , wall      = Wall True
+    { castle    = Just (Castle "SmallCastle" True)
     , community = Library
-    , housing   = Housing 0 2 3 5
+    , housing   = [Two, Two, Two, Three, Three, Three, Four, Four, Four, Four]
     }
 
 testCity3 :: City
 testCity3 = City
-    { castle    = Just (Castle "SmallCastle")
-    , wall      = Wall False
+    { castle    = Just (Castle "SmallCastle" False)
     , community = Library
-    , housing   = Housing 0 2 3 3
+    , housing   = [Two, Two, Two, Three, Three, Three, Four, Four, Four]
     }
 
-testHouses :: Housing
-testHouses = Housing 5 3 0 0
+testHouses :: [Houses]
+testHouses = [Two, Two, Two, Three, Three, Three, Three, Three, Four, Four, Four, Four, Four]
 
 kk :: Knight'
 kk = K

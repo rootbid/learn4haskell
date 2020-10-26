@@ -50,7 +50,7 @@ signatures in places where you can't by default. We believe it's helpful to
 provide more top-level type signatures, especially when learning Haskell.
 -}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+-- {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Chapter3 where
 
@@ -396,29 +396,11 @@ data Monster = Monster
     , monsterGold   :: Int
     } deriving (Show)
 
-mon :: Monster
-mon = Monster
-    { monsterHealth = 20
-    , monsterAttack = 2
-    , monsterGold   = 20
-    }
-
-kni :: Knight
-kni = Knight
-    { knightHealth = 25
-    , knightAttack = 2
-    , knightGold   = 15
-    }
-
 fight :: Monster -> Knight -> Int
-fight (Monster mH mA mG) (Knight kH kA kG) = 
-    if (mH - kA) > 0 then
-      if (kH - mA) > 0 then
-        -- fight (Monster (mH-kA) mA mG) (Knight (kH-mA) kA kG)
-        kG
-      else -1
-    else
-      kG + mG
+fight (Monster mH mA mG) (Knight kH kA kG)
+    | (mH - kA) <= 0 = kG + mG
+    | (kH - mA) <= 0 = -1
+    | otherwise      = kG
 
 {- |
 =🛡= Sum types
@@ -528,59 +510,40 @@ After defining the city, implement the following functions:
    and at least 10 living __people__ inside in all houses of the city totally.
 -}
 
-data Castle = Castle String 
-    deriving (Show, Eq)
-
-data Wall = Wall Bool 
-    deriving (Show, Eq)
+data Castle = Castle
+    { name :: String
+    , wall :: Bool
+    } deriving (Show, Eq)
 
 data Community = Church | Library 
     deriving (Show, Eq)
 
-data Housing = Housing
-    { oneOccupant    :: Int
-    , twoOccupants   :: Int
-    , threeOccupants :: Int
-    , fourOccupants  :: Int
-    } deriving (Show, Eq)
+data Houses 
+    = One
+    | Two
+    | Three
+    | Four
+    deriving (Show, Eq)
 
 data City = City
     { castle    :: Maybe Castle
-    , wall      :: Wall
     , community :: Community
-    , housing   :: Housing
+    , housing   :: [Houses]
     } deriving (Show, Eq)
 
 buildCastle :: City -> City
 buildCastle city = 
-    city { castle = Just (Castle "NewCastle") }
+    city { castle = Just (Castle "NewCastle" False) }
 
-buildHouse :: Housing -> City -> City
+buildHouse :: [Houses] -> City -> City
 buildHouse newHouses city =
-    city { housing = Housing
-            { oneOccupant    = (oneOccupant newHouses) + (oneOccupant $ housing city)
-            , twoOccupants   = (twoOccupants newHouses) + (twoOccupants $ housing city)
-            , threeOccupants = (threeOccupants newHouses) + (threeOccupants $ housing city)
-            , fourOccupants  = (fourOccupants newHouses) + (fourOccupants $ housing city)
-            }
-         }
+    city { housing = (housing city) ++ newHouses }
 
 buildWalls :: City -> City
-buildWalls city = 
-    if isJust (castle city) then 
-        if totalHouses (housing city) >= 10 then 
-            city { wall = Wall True }
-        else city
-    else city
-    where 
-        totalHouses :: Housing -> Int
-        totalHouses houses = 
-            (oneOccupant $ houses) + (twoOccupants $ houses) + (threeOccupants $ houses) + (fourOccupants $ houses)
-
-        isJust :: Maybe Castle -> Bool
-        isJust (Just _) = True
-        isJust _        = False
-
+buildWalls (City (Just c) n h)
+    | not (wall c) && length h >= 10 = City (Just (Castle (name c) True)) n h
+    | otherwise                                = City (Just c) n h
+buildWalls (City Nothing n h) = City Nothing n h
 
 {-
 =🛡= Newtypes
@@ -1183,13 +1146,8 @@ data Knight' = K
     , kActions :: KnightActions
     } deriving Show
 
-cycleMActions :: MonsterActions -> MonsterActions
-cycleMActions a
-    | a == maxBound   = minBound
-    | otherwise       = succ a
-
-cycleKActions :: KnightActions -> KnightActions
-cycleKActions a
+cycleActions :: (Eq a, Enum a, Bounded a) => a -> a
+cycleActions a 
     | a == maxBound   = minBound
     | otherwise       = succ a
 
@@ -1198,43 +1156,64 @@ getMonsterDamage (Health h) (Attack a) = Health (h - a)
 
 getKnightDamange :: Health -> Defense -> Attack -> Health
 getKnightDamange (Health h) (Defense d) (Attack a) = Health ((h + d) - a)
-
-skipKAttack :: KnightActions -> Attack -> Attack
-skipKAttack KAttack a = a
-skipKAttack _ _ = Attack 0
     
-skipMAttack :: MonsterActions -> Attack -> Attack
-skipMAttack MAttack a = a
-skipMAttack _ _ = Attack 0
+skipAttack :: (Eq a, Enum a, Bounded a) => a -> Attack -> Attack
+skipAttack MAttack atk = atk
+skipAttack KAttack atk = atk
+skipAttack _ _         = Attack 0
 
-class Battle a b where {
-    battle :: a -> b -> String
-}
+class Fighter f where
+    fight' :: Fighter other => f -> other -> (other, f
+    -- attack :: f -> Attack
+    -- isAlive :: f -> Bool
 
-instance Battle Knight' Monster' where
-    battle :: Knight' -> Monster' -> String
-    battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
-        | pk == KAttack && pm == MAttack   = fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
-        | pk == KAttack && pm == Run       = fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
-        | pk == Heal && pm == MAttack      = fight' (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
-        | pk == Heal && pm == Run          = fight' (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
-        | pk == SpellCast && pm == MAttack = fight' (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
-        | pk == SpellCast && pm == Run     = fight' (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
+instance Fighter Knight' where
+    fight' :: Knight' -> Monster' -> (Monster', Knight')
+    fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+        | pk == KAttack && pm == MAttack   = battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+        | pk == KAttack && pm == Run       = battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+        | pk == Heal && pm == MAttack      = battle (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+        | pk == Heal && pm == Run          = battle (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+        | pk == SpellCast && pm == MAttack = battle (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
+        | pk == SpellCast && pm == Run     = battle (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
         where
-            fight' :: Knight' -> Monster' -> String
-            fight' (K kH kA kD kP) (M mH mA mP) =
-                if (getMonsterDamage mH (skipKAttack kP kA) > Health 0) then
-                    if (getKnightDamange kH kD (skipMAttack mP mA) > Health 0) then do
+            battle :: Knight' -> Monster' -> String
+            battle (K kH kA kD kP) (M mH mA mP) =
+                if (getMonsterDamage mH (skipAttack kP kA) > Health 0) then
+                    if (getKnightDamange kH kD (skipAttack mP mA) > Health 0) then do
                         let newKHealth = getKnightDamange kH kD mA
                         let newMHealth = getMonsterDamage mH kA
-                        let knight' = K newKHealth kA kD (cycleKActions kP)
-                        let monster' = M newMHealth mA (cycleMActions mP)
-                        battle knight' monster'
+                        let knight' = K newKHealth kA kD (cycleActions kP)
+                        let monster' = M newMHealth mA (cycleActions mP)
+                        fight' knight' monster'
                     else
                         "Monster wins"
                 else
                     "Knight wins"
 
+-- instance Fighter Monster' where
+--     fight' :: Monster' -> Knight' -> String
+--     fight' (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+--         | pk == KAttack && pm == MAttack   = battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+--         | pk == KAttack && pm == Run       = battle (K (Health hk) ak (Defense dk) pk) (M hm am pm)
+--         | pk == Heal && pm == MAttack      = battle (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+--         | pk == Heal && pm == Run          = battle (K (Health (hk+10)) ak (Defense dk) pk) (M hm am pm)
+--         | pk == SpellCast && pm == MAttack = battle (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
+--         | pk == SpellCast && pm == Run     = battle (K (Health hk) ak (Defense (dk+10)) pk) (M hm am pm)
+--         where
+--             battle :: Monster' -> Knight' -> String
+--             battle (K kH kA kD kP) (M mH mA mP) =
+--                 if (getMonsterDamage mH (skipAttack kP kA) > Health 0) then
+--                     if (getKnightDamange kH kD (skipAttack mP mA) > Health 0) then do
+--                         let newKHealth = getKnightDamange kH kD mA
+--                         let newMHealth = getMonsterDamage mH kA
+--                         let knight' = K newKHealth kA kD (cycleActions kP)
+--                         let monster' = M newMHealth mA (cycleActions mP)
+--                         fight' knight' monster'
+--                     else
+--                         "Monster wins"
+--                 else
+--                     "Knight wins"
 {-
 You did it! Now it is time to open pull request with your changes
 and summon @vrom911 and @chshersh for the review!
