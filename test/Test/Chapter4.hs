@@ -51,7 +51,7 @@ chapter4normal = describe "Chapter4Normal" $ do
         it "Reward odd" $ (Reward 11 >>= halfSecret) `shouldBe` Trap "it's a trap"
 
 chapter4advanced :: Spec
-chapter4advanced = describe "Chapter4Advanced" $
+chapter4advanced = describe "Chapter4Advanced" $ do
     describe "Task 8*: Before the Final Boss" $ do
         it "Nothing - Nothing" $ andM Nothing Nothing `shouldBe` Nothing
         it "Nothing - Just" $ andM Nothing (Just True) `shouldBe` Nothing
@@ -59,8 +59,21 @@ chapter4advanced = describe "Chapter4Advanced" $
         it "Just False - Nothing" $ andM (Just False) Nothing `shouldBe` Just False
         it "Just - Just : False" $ andM (Just True) (Just False) `shouldBe` Just False
         it "Just - Just : True" $ andM (Just True) (Just True) `shouldBe` Just True
+    describe "Task 9: Binary tree" $ do
+        it "Create tree" $ createTree testList `shouldBe` testBTree
+        it "Reverse tree" $ reverseTree testBTree `shouldBe` testReverseTree
+        it "Flatten tree to List" $ flattenTree testBTree `shouldBe` testList 
 
 halfSecret :: Int -> Secret String Int
 halfSecret n
     | even n = Reward (div n 2)
     | otherwise = Trap "it's a trap"
+
+testList :: List Int
+testList = (Cons 0 (Cons 1 (Cons 2 (Cons 3 (Cons 4 (Cons 5 (Cons 6 (Cons 7 (Cons 8 (Cons 9 (Cons 10 Empty)))))))))))
+
+testBTree :: BTree Int
+testBTree = Node (Node (Node (Node Nil 0 Nil) 1 Nil) 2 (Node (Node Nil 3 Nil) 4 Nil)) 5 (Node (Node (Node Nil 6 Nil) 7 Nil) 8 (Node (Node Nil 9 Nil) 10 Nil))
+
+testReverseTree :: BTree Int
+testReverseTree = Node (Node (Node Nil 10 (Node Nil 9 Nil)) 8 (Node Nil 7 (Node Nil 6 Nil))) 5 (Node (Node Nil 4 (Node Nil 3 Nil)) 2 (Node Nil 1 (Node Nil 0 Nil)))
